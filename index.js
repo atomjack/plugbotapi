@@ -23,7 +23,7 @@
         this.page.evaluate(function(obj) {
           var args = '';
           if (obj.arg != null) {
-            if (!Array.isArray([obj.arg]))
+            if (!Array.isArray(obj.arg))
               obj.arg = [obj.arg];
             var newArgs = [];
             for(var i=0;i<obj.arg.length;i++) {
@@ -76,7 +76,6 @@
                   var line = 'API.on(API.' + thisEvent + ', function(data) { console.log(\'API.' + thisEvent + ':\' + JSON.stringify(data)); }); ';
                   eval(line);
                 }
-                
               });
               
               _this.emit('roomJoin');
@@ -125,6 +124,10 @@
     
     // Actions
     PlugBotAPI.prototype.chat = function(msg, callback) {
+      this.apiCall('sendChat', msg, callback);
+    };
+    
+     PlugBotAPI.prototype.speak = function(msg, callback) {
       this.apiCall('sendChat', msg, callback);
     };
     
