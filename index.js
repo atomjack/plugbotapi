@@ -140,6 +140,14 @@
       this.apiCall('getUser', userid, callback);
     };
     
+    PlugBotAPI.prototype.getDJ = function(callback) {
+      this.apiCall('getDJ', null, callback);
+    };
+    
+    PlugBotAPI.prototype.getAudience = function(callback) {
+      this.apiCall('getAudience', null, callback);
+    };
+    
     PlugBotAPI.prototype.getStaff = function(callback) {
       this.apiCall('getStaff', null, callback);
     };
