@@ -3,6 +3,7 @@
   var phantom = require('phantom');
   var EventEmitter = require('events').EventEmitter;
   var __hasProp = {}.hasOwnProperty;
+  var http = require('http');
   
   PlugBotAPI = (function(_super) {
   
@@ -36,6 +37,7 @@
             args = newArgs.join(", ");
           }
           var line = 'var result = API.' + obj.call + '(' + args + ');';
+          console.log("debug: line: " + line);
           eval(line);
           return result;
         }, function(result) {
@@ -120,6 +122,22 @@
           callback(err, cookieVal);
         }
       });
+    };
+    
+    PlugBotAPI.prototype.listen = function(port, address) {
+      var self = this;
+      var querystring = require('querystring');
+      http.createServer(function (req, res) {
+        var dataStr = '';
+        req.on('data', function (chunk) {
+					dataStr += chunk.toString();
+        });
+        req.on('end', function () {
+					var data = querystring.parse(dataStr);
+					req._POST = data;
+					self.emit('httpRequest', req, res);
+        });
+      }).listen(port, address);
     };
     
     // Actions

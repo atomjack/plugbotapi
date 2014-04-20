@@ -16,7 +16,7 @@
     "node": "*"
   },
   "dependencies" : {
-  	"zombie": "*",
+  	"phantom": "*",
     "plug-dj-login": "*"
   },
   "devDependencies": {},
