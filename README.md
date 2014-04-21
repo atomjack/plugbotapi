@@ -14,15 +14,15 @@ More documentation will soon follow, but this will get you started. Check the so
 ```
 var PlugBotAPI = require('./plugbotapi');
  
- 
-var plugbotapi = new PlugBotAPI(auth);
-var room = 'some-room';
-
-plugbotapi.getAuth({
+PlugBotAPI.getAuth({
   username: 'xxxx',
   password: 'xxxx'
 }, function(err, auth) {
-  
+ 
+  var plugbotapi = new PlugBotAPI(auth);
+  var room = 'some-room';
+
+ 
  
   plugbotapi.connect(room);
    
