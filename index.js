@@ -33,10 +33,14 @@
               obj.arg = [obj.arg];
             var newArgs = [];
             for(var i=0;i<obj.arg.length;i++) {
-              if (obj.arg[i].match(/^API\.(ROLE|STATUS|BAN)/)) {
-                newArgs.push(obj.arg[i].replace("'", "\\'"));
+              if (typeof obj.arg[i] == 'string') {
+                if (obj.arg[i].match(/^API\.(ROLE|STATUS|BAN)/)) {
+                  newArgs.push(obj.arg[i].replace("'", "\\'"));
+                } else {
+                  newArgs.push("'" + obj.arg[i].replace("'", "\\'") + "'");
+                }
               } else {
-                newArgs.push("'" + obj.arg[i].replace("'", "\\'") + "'");
+                newArgs.push(obj.arg[i]);
               }
             }
             args = newArgs.join(", ");
@@ -79,6 +83,8 @@
               page.evaluate(function() {
                 // First, get rid of the playback div so we don't needlessly use up all that bandwidth
                 $('#playback').remove();
+                $('#audience').remove();
+                $('#dj-booth').remove();
                 var events = ['CHAT', 'USER_SKIP', 'USER_JOIN', 'USER_LEAVE', 'USER_FAN', 'FRIEND_JOIN', 'FAN_JOIN', 'VOTE_UPDATE', 'CURATE_UPDATE', 'ROOM_SCORE_UPDATE', 'DJ_ADVANCE', 'DJ_UPDATE', 'WAIT_LIST_UPDATE', 'VOTE_SKIP', 'MOD_SKIP', 'CHAT_COMMAND', 'HISTORY_UPDATE'];
                 for(var i in events) {
                   var thisEvent = events[i];
