@@ -15,8 +15,8 @@ More documentation will soon follow, but this will get you started. Check the so
 var PlugBotAPI = require('./plugbotapi');
  
 PlugBotAPI.getAuth({
-  username: 'xxxx',
-  password: 'xxxx'
+  username: 'xxxx', // twitter username
+  password: 'xxxx' // twitter password
 }, function(err, auth) {
  
   var plugbotapi = new PlugBotAPI(auth);
