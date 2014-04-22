@@ -4,6 +4,7 @@
   var EventEmitter = require('events').EventEmitter;
   var __hasProp = {}.hasOwnProperty;
   var http = require('http');
+  var net = require('net');
   
   PlugBotAPI = (function(_super) {
   
@@ -13,8 +14,12 @@
       this.auth = auth;
       this.page = false;
       this.pageReady = false;
-      
+      this.phantomPort = 12300; // default phantom port
     }
+    
+    PlugBotAPI.prototype.setPhantomPort = function(port) {
+      this.phantomPort = port;
+    };
     
     PlugBotAPI.prototype.apiCall = function(call, arg, callback) {
       if (this.pageReady === true) {
@@ -29,15 +34,15 @@
             var newArgs = [];
             for(var i=0;i<obj.arg.length;i++) {
               if (obj.arg[i].match(/^API\.(ROLE|STATUS|BAN)/)) {
-                newArgs.push(obj.arg[i]);
+                newArgs.push(obj.arg[i].replace("'", "\\'"));
               } else {
-                newArgs.push("'" + obj.arg[i] + "'");
+                newArgs.push("'" + obj.arg[i].replace("'", "\\'") + "'");
               }
             }
             args = newArgs.join(", ");
           }
-          var line = 'var result = API.' + obj.call + '(' + args + ');';
-          console.log("debug: line: " + line);
+          var result;
+          var line = 'result = API.' + obj.call + '(' + args + ');';
           eval(line);
           return result;
         }, function(result) {
@@ -51,7 +56,7 @@
     
     PlugBotAPI.prototype.connect = function(room) {
       var _this = this;
-      phantom.create(function(ph) {
+      phantom.create({ port: _this.phantomPort }, function(ph) {
     
       ph.createPage(function(page) {
         ph.addCookie('usr', _this.auth, 'plug.dj');
@@ -136,6 +141,24 @@
 					var data = querystring.parse(dataStr);
 					req._POST = data;
 					self.emit('httpRequest', req, res);
+        });
+      }).listen(port, address);
+    };
+    
+    PlugBotAPI.prototype.tcpListen = function(port, address) {
+      var self = this;
+      net.createServer(function (socket) {
+        socket.on('connect', function () {
+					self.emit('tcpConnect', socket);
+        });
+        socket.on('data', function (data) {
+					var msg = data.toString();
+					if (msg[msg.length - 1] == '\n') {
+						self.emit('tcpMessage', socket, msg.substr(0, msg.length-1), port);
+					}
+        });
+        socket.on('end', function () {
+					self.emit('tcpEnd', socket);
         });
       }).listen(port, address);
     };

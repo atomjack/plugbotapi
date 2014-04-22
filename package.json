@@ -16,8 +16,9 @@
     "node": "*"
   },
   "dependencies" : {
-  	"phantom": "*",
-    "plug-dj-login": "*"
+		"phantom": "*",
+		"plug-dj-login": "*",
+		"net": "*"
   },
   "devDependencies": {},
   "optionalDependencies": {
