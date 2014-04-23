@@ -76,6 +76,11 @@ PlugBotAPI emits the following events. For documentation please refer to the off
 * chatCommand
 * historyUpdate
 
+Also emitted is the following:
+
+* roomJoin: emitted when the bot has completed joining the room and is ready to send actions/receive events.
+
+
 ## Actions
 
 All data returned by actions is returned inside the callback that must be specified.
