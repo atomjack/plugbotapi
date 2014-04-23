@@ -9,6 +9,10 @@ This API requires phantomjs version 2.0 or greater. The websockets stack in 1.9 
 
 You can find information on how to compile and install 2.0 here: https://groups.google.com/forum/#!msg/phantomjs/iYyH6hF_xoQ/fTmVD8-NcFIJ
 
+```
+npm install plugbotapi
+```
+
 ## How to use
 
 ```
