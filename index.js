@@ -15,6 +15,7 @@
       this.page = false;
       this.pageReady = false;
       this.phantomPort = 12300; // default phantom port
+      this.API = {}; // Plug constants
     }
     
     PlugBotAPI.prototype.setPhantomPort = function(port) {
@@ -31,19 +32,11 @@
           if (obj.arg != null) {
             if (!Array.isArray(obj.arg))
               obj.arg = [obj.arg];
-            var newArgs = [];
             for(var i=0;i<obj.arg.length;i++) {
-              if (typeof obj.arg[i] == 'string') {
-                if (obj.arg[i].match(/^API\.(ROLE|STATUS|BAN)/)) {
-                  newArgs.push(obj.arg[i].replace("'", "\\'"));
-                } else {
-                  newArgs.push("'" + obj.arg[i].replace("'", "\\'") + "'");
-                }
-              } else {
-                newArgs.push(obj.arg[i]);
-              }
+              if (typeof obj.arg[i] == 'string')
+                 obj.arg[i] = "'" + obj.arg[i].replace("'", "\\'") + "'";
             }
-            args = newArgs.join(", ");
+            args = obj.arg.join(', ');
           }
           var result;
           var line = 'result = API.' + obj.call + '(' + args + ');';
@@ -73,27 +66,35 @@
             // this will appear once we're ready
             if (msg.match(/^sio join/)) {
               _this.pageReady = true;
-              
-              // Sample api call
-              //_this.apiCall('getAudience', null, function(result) {
-              //  console.log("audience: ", result.length);
-              //});
-              
+
               // Setup events
               page.evaluate(function() {
                 // First, get rid of the playback div so we don't needlessly use up all that bandwidth
                 $('#playback').remove();
+                // Might as well get rid of these, perhaps lower cpu usage?
                 $('#audience').remove();
                 $('#dj-booth').remove();
+
                 var events = ['CHAT', 'USER_SKIP', 'USER_JOIN', 'USER_LEAVE', 'USER_FAN', 'FRIEND_JOIN', 'FAN_JOIN', 'VOTE_UPDATE', 'CURATE_UPDATE', 'ROOM_SCORE_UPDATE', 'DJ_ADVANCE', 'DJ_UPDATE', 'WAIT_LIST_UPDATE', 'VOTE_SKIP', 'MOD_SKIP', 'CHAT_COMMAND', 'HISTORY_UPDATE'];
                 for(var i in events) {
                   var thisEvent = events[i];
                   var line = 'API.on(API.' + thisEvent + ', function(data) { console.log(\'API.' + thisEvent + ':\' + JSON.stringify(data)); }); ';
                   eval(line);
                 }
+                var result = {
+                  ROLE: API.ROLE,
+                  STATUS: API.STATUS,
+                  BAN: API.BAN
+                };
+                return result;
+              }, function(result) {
+                  _this.API.ROLE = result.ROLE;
+                  _this.API.STATUS = result.STATUS;
+                  _this.API.BAN = result.BAN;
+                  _this.emit('roomJoin');
               });
               
-              _this.emit('roomJoin');
+
             } else if (msg.match(/^debug:/)) {
               console.log(msg);
             }
@@ -176,7 +177,7 @@
       this.apiCall('sendChat', msg, callback);
     };
     
-     PlugBotAPI.prototype.speak = function(msg, callback) {
+    PlugBotAPI.prototype.speak = function(msg, callback) {
       this.apiCall('sendChat', msg, callback);
     };
     
@@ -241,14 +242,6 @@
       this.apiCall('djLeave', null, callback);
     };
     
-    PlugBotAPI.prototype.getVolume = function(callback) {
-      this.apiCall('getVolume', null, callback);
-    };
-    
-    PlugBotAPI.prototype.setVolume = function(value, callback) {
-      this.apiCall('setVolume', value, callback);
-    };
-    
     PlugBotAPI.prototype.getWaitListPosition = function(userid, callback) {
       this.apiCall('getWaitListPosition', userid, callback);
     };
@@ -259,10 +252,6 @@
     
     PlugBotAPI.prototype.getNextMedia = function(callback) {
       this.apiCall('getNextMedia', null, callback);
-    };
-    
-    PlugBotAPI.prototype.getBannedUsers = function(callback) {
-      this.apiCall('getBannedUsers', null, callback);
     };
     
     PlugBotAPI.prototype.getTimeElapsed = function(callback) {
@@ -285,9 +274,17 @@
       this.apiCall('moderateRemoveDJ', userid, callback);
     };
     
-    // TODO: Make sure this works
-    PlugBotAPI.prototype.moderateBanUser = function(userid, reason, duration, callback) {
-      this.apiCall('moderateBanUser', [userid, reason, duration], callback);
+    PlugBotAPI.prototype.moderateBanUser = function(userid, duration, callback) {
+        var userid = arguments[0];
+        var duration = null;
+        var callback;
+        if(typeof arguments[1] == 'function')
+            callback = arguments[1];
+        else {
+            duration = arguments[1];
+            callback = arguments[2];
+        }
+      this.apiCall('moderateBanUser', [userid, 'a', duration], callback);
     };
     
     PlugBotAPI.prototype.moderateUnbanUser = function(userid, callback) {
