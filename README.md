@@ -1,4 +1,4 @@
-plugapi
+plugbotapi
 =======
 
 An API for creating bots on plug.dj
