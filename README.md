@@ -16,7 +16,7 @@ npm install plugbotapi
 ## How to use
 
 ```
-var PlugBotAPI = require('./plugbotapi');
+var PlugBotAPI = require('plugbotapi');
  
 PlugBotAPI.getAuth({
   username: 'xxxx', // twitter username

@@ -54,69 +54,85 @@
     PlugBotAPI.prototype.connect = function(room) {
       var _this = this;
       phantom.create({ port: _this.phantomPort }, function(ph) {
-    
-      ph.createPage(function(page) {
-        ph.addCookie('usr', _this.auth, 'plug.dj');
-        
-        page.open('http://plug.dj/' + room, function(status) {
-          
-          page.set('onConsoleMessage', function(msg) {
-            //console.log("msg: ", msg);
-            
-            // this will appear once we're ready
-            if (msg.match(/^sio join/)) {
-              _this.pageReady = true;
 
-              // Setup events
-              page.evaluate(function() {
-                // First, get rid of the playback div so we don't needlessly use up all that bandwidth
-                $('#playback').remove();
-                // Might as well get rid of these, perhaps lower cpu usage?
-                $('#audience').remove();
-                $('#dj-booth').remove();
-
-                var events = ['CHAT', 'USER_SKIP', 'USER_JOIN', 'USER_LEAVE', 'USER_FAN', 'FRIEND_JOIN', 'FAN_JOIN', 'VOTE_UPDATE', 'CURATE_UPDATE', 'ROOM_SCORE_UPDATE', 'DJ_ADVANCE', 'DJ_UPDATE', 'WAIT_LIST_UPDATE', 'VOTE_SKIP', 'MOD_SKIP', 'CHAT_COMMAND', 'HISTORY_UPDATE'];
-                for(var i in events) {
-                  var thisEvent = events[i];
-                  var line = 'API.on(API.' + thisEvent + ', function(data) { console.log(\'API.' + thisEvent + ':\' + JSON.stringify(data)); }); ';
-                  eval(line);
-                }
-                var result = {
-                  ROLE: API.ROLE,
-                  STATUS: API.STATUS,
-                  BAN: API.BAN
-                };
-                return result;
-              }, function(result) {
-                  _this.API.ROLE = result.ROLE;
-                  _this.API.STATUS = result.STATUS;
-                  _this.API.BAN = result.BAN;
-                  _this.emit('roomJoin');
-              });
-              
-
-            } else if (msg.match(/^debug:/)) {
-              console.log(msg);
-            }
-            var apiRegexp = /^API.([^:]+):(.*)/g;
-            var matches = apiRegexp.exec(msg);
-            
-            if (matches != null) {
-              //console.log(matches[1] + ":" + matches[2]);
-              // matches[1] = which event
-              // matches[2] = json representation of data
-              var event = matches[1].toLowerCase().replace(/_([a-z])/g, function(a) {
-                return a.replace('_', '').toUpperCase();
-              });
-              var data = JSON.parse(matches[2]);
-              
-              // emit this event out to the PlugBotAPI, for a bot to receive
-              _this.emit(event, data);
-            }
-          });
+        ph.get('version', function(result) {
+          if(result.major < 2) {
+            var version = result.major + "." + result.minor + "." + result.patch;
+            console.log("Sorry, but PlugBotAPI requires phantomjs version >= 2.0.0. You are running version " + version + ".");
+            ph.exit();
+            process.exit(1);
+          }
         });
-        
-        _this.page = page;
+        ph.createPage(function(page) {
+          ph.addCookie('usr', _this.auth, 'plug.dj');
+
+          page.open('http://plug.dj/' + room, function(status) {
+
+            page.set('onConsoleMessage', function(msg) {
+              //console.log("msg: ", msg);
+
+              // this will appear once we're ready
+              if (msg.match(/^sio join/)) {
+                _this.pageReady = true;
+
+                // Setup events
+                page.evaluate(function() {
+                  // First, get rid of the playback div so we don't needlessly use up all that bandwidth
+                  $('#playback').remove();
+                  // Might as well get rid of these, perhaps lower cpu usage?
+                  $('#audience').remove();
+                  $('#dj-booth').remove();
+
+                  var events = ['CHAT', 'USER_SKIP', 'USER_JOIN', 'USER_LEAVE', 'USER_FAN', 'FRIEND_JOIN', 'FAN_JOIN', 'VOTE_UPDATE', 'CURATE_UPDATE', 'ROOM_SCORE_UPDATE', 'DJ_ADVANCE', 'DJ_UPDATE', 'WAIT_LIST_UPDATE', 'VOTE_SKIP', 'MOD_SKIP', 'CHAT_COMMAND', 'HISTORY_UPDATE'];
+                  for(var i in events) {
+                    var thisEvent = events[i];
+                    var line = 'API.on(API.' + thisEvent + ', function(data) { console.log(\'API.' + thisEvent + ':\' + JSON.stringify(data)); }); ';
+                    console.log("debug:" + line);
+                    eval(line);
+                  }
+                  var result = {
+                    ROLE: API.ROLE,
+                    STATUS: API.STATUS,
+                    BAN: API.BAN
+                  };
+                  return result;
+                }, function(result) {
+                    _this.API.ROLE = result.ROLE;
+                    _this.API.STATUS = result.STATUS;
+                    _this.API.BAN = result.BAN;
+                    setTimeout(function() {
+                        _this.getPlaylists();
+                        _this.emit('roomJoin');
+                    }, 1000);
+
+                });
+
+
+              } else if (msg.match(/^debug:/)) {
+                console.log(msg);
+              }
+              if (msg.match(/^error/) && _this.pageReady === false) {
+                _this.emit('connectionError', msg);
+              }
+              var apiRegexp = /^API.([^:]+):(.*)/g;
+              var matches = apiRegexp.exec(msg);
+
+              if (matches != null) {
+                //console.log(matches[1] + ":" + matches[2]);
+                // matches[1] = which event
+                // matches[2] = json representation of data
+                var event = matches[1].toLowerCase().replace(/_([a-z])/g, function(a) {
+                  return a.replace('_', '').toUpperCase();
+                });
+                var data = JSON.parse(matches[2]);
+
+                // emit this event out to the PlugBotAPI, for a bot to receive
+                _this.emit(event, data);
+              }
+            });
+          });
+
+          _this.page = page;
         });
       });
     };
@@ -276,7 +292,7 @@
     
     PlugBotAPI.prototype.moderateBanUser = function(userid, duration, callback) {
         var userid = arguments[0];
-        var duration = null;
+        var duration = 'API.BAN.PERMA';
         var callback;
         if(typeof arguments[1] == 'function')
             callback = arguments[1];
