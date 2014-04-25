@@ -35,6 +35,7 @@
             for(var i=0;i<obj.arg.length;i++) {
               if (typeof obj.arg[i] == 'string')
                  obj.arg[i] = "'" + obj.arg[i].replace("'", "\\'") + "'";
+                 obj.arg[i] = "'" + obj.arg[i].replace(/\'/g, "\\'") + "'";
             }
             args = obj.arg.join(', ');
           }
