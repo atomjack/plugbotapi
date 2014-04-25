@@ -5,7 +5,8 @@
   var __hasProp = {}.hasOwnProperty;
   var http = require('http');
   var net = require('net');
-  
+  var util = require('util');
+
   PlugBotAPI = (function(_super) {
   
     __extends(PlugBotAPI, _super);
@@ -16,7 +17,24 @@
       this.pageReady = false;
       this.phantomPort = 12300; // default phantom port
       this.API = {}; // Plug constants
+      this.debug.plugbotapi = this;
     }
+
+    PlugBotAPI.prototype.debug = {
+      SHOWAPI: true,
+      SHOWOTHER: true,
+      logapi: function() {
+        if(this.SHOWAPI === true)
+          this.log(util.format.apply(null, arguments));
+      },
+      logother: function() {
+        if(this.SHOWOTHER === true)
+          this.log(util.format.apply(null, arguments));
+      },
+      log: function(text) {
+        this.plugbotapi.emit('debug', text);
+      }
+    };
     
     PlugBotAPI.prototype.setPhantomPort = function(port) {
       this.phantomPort = port;
@@ -34,7 +52,6 @@
               obj.arg = [obj.arg];
             for(var i=0;i<obj.arg.length;i++) {
               if (typeof obj.arg[i] == 'string')
-                 obj.arg[i] = "'" + obj.arg[i].replace("'", "\\'") + "'";
                  obj.arg[i] = "'" + obj.arg[i].replace(/\'/g, "\\'") + "'";
             }
             args = obj.arg.join(', ');
@@ -70,10 +87,10 @@
           page.open('http://plug.dj/' + room, function(status) {
 
             page.set('onConsoleMessage', function(msg) {
-              //console.log("msg: ", msg);
 
               // this will appear once we're ready
               if (msg.match(/^sio join/)) {
+                _this.debug.logother(msg);
                 _this.pageReady = true;
 
                 // Setup events
@@ -85,36 +102,36 @@
                   $('#dj-booth').remove();
 
                   var events = ['CHAT', 'USER_SKIP', 'USER_JOIN', 'USER_LEAVE', 'USER_FAN', 'FRIEND_JOIN', 'FAN_JOIN', 'VOTE_UPDATE', 'CURATE_UPDATE', 'ROOM_SCORE_UPDATE', 'DJ_ADVANCE', 'DJ_UPDATE', 'WAIT_LIST_UPDATE', 'VOTE_SKIP', 'MOD_SKIP', 'CHAT_COMMAND', 'HISTORY_UPDATE'];
-                  for(var i in events) {
+                  for (var i in events) {
                     var thisEvent = events[i];
                     var line = 'API.on(API.' + thisEvent + ', function(data) { console.log(\'API.' + thisEvent + ':\' + JSON.stringify(data)); }); ';
-                    console.log("debug:" + line);
                     eval(line);
                   }
-                  var result = {
+                  return {
                     ROLE: API.ROLE,
                     STATUS: API.STATUS,
                     BAN: API.BAN
                   };
-                  return result;
-                }, function(result) {
-                    _this.API.ROLE = result.ROLE;
-                    _this.API.STATUS = result.STATUS;
-                    _this.API.BAN = result.BAN;
-                    setTimeout(function() {
-                        _this.getPlaylists();
-                        _this.emit('roomJoin');
-                    }, 1000);
+                }, function (result) {
+                  _this.API.ROLE = result.ROLE;
+                  _this.API.STATUS = result.STATUS;
+                  _this.API.BAN = result.BAN;
+                  setTimeout(function () {
+                    _this.getPlaylists();
+                    _this.emit('roomJoin');
+                  }, 1000);
 
                 });
-
-
-              } else if (msg.match(/^debug:/)) {
-                console.log(msg);
+              } else if(msg.match(/^API/)) {
+                _this.debug.logapi(msg);
+              } else {
+                _this.debug.logother(msg);
               }
               if (msg.match(/^error/) && _this.pageReady === false) {
                 _this.emit('connectionError', msg);
               }
+
+
               var apiRegexp = /^API.([^:]+):(.*)/g;
               var matches = apiRegexp.exec(msg);
 
@@ -122,6 +139,8 @@
                 //console.log(matches[1] + ":" + matches[2]);
                 // matches[1] = which event
                 // matches[2] = json representation of data
+
+                // Rename event to be camelCase
                 var event = matches[1].toLowerCase().replace(/_([a-z])/g, function(a) {
                   return a.replace('_', '').toUpperCase();
                 });
