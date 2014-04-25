@@ -117,7 +117,6 @@
                   _this.API.STATUS = result.STATUS;
                   _this.API.BAN = result.BAN;
                   setTimeout(function () {
-                    _this.getPlaylists();
                     _this.emit('roomJoin');
                   }, 1000);
 
