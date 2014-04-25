@@ -293,7 +293,7 @@
     
     PlugBotAPI.prototype.moderateBanUser = function(userid, duration, callback) {
         var userid = arguments[0];
-        var duration = 'API.BAN.PERMA';
+        var duration = this.API.BAN.PERMA;
         var callback;
         if(typeof arguments[1] == 'function')
             callback = arguments[1];
@@ -323,10 +323,28 @@
     PlugBotAPI.prototype.moderateLockWaitList = function(locked, removeAll, callback) {
       this.apiCall('moderateLockWaitList', [locked, removeAll], callback);
     };
-    
-    //PlugBotAPI.prototype. = function(callback) {
-    //  this.apiCall('', null, callback);
-    //};
+
+    PlugBotAPI.prototype.woot = function() {
+      this.vote('woot');
+    };
+
+    PlugBotAPI.prototype.meh = function() {
+      this.vote('meh');
+    };
+
+    PlugBotAPI.prototype.vote = function(which) {
+      if (this.pageReady === true) {
+        var _this = this;
+        _this.page.evaluate(function (which) {
+          if(which == 'woot')
+            $('#woot').click();
+          else if(which == 'meh') {
+            $('#meh').click();
+          }
+        }, function () {
+        }, which);
+      }
+    };
     
     
     
