@@ -277,8 +277,8 @@ plugbotapi.setPhantomPort(12301);
 If you run into problems and would like some more visibility into what the virtual browser is doing, try this:
 
 ```
-plugbotapi.debug.SHOWAPI = true; // set this to true to see the official Plug API events and actions that the virtual browser is sending and receiving.
-plugbotapi.debug.SHOWOTHER = true; // set this to true to see any other messages the virtual browser is logging to its console
+//plugbotapi.debug.SHOWAPI = false; // set this to false to hide the official Plug API events and actions that the virtual browser is sending and receiving. (default true)
+//plugbotapi.debug.SHOWOTHER = false; // set this to false to hide any other messages the virtual browser is logging to its console. (default true)
 
 // The API emits the 'debug' event:
 plugbotapi.on('debug', function(text) {
