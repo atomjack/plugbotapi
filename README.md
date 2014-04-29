@@ -260,6 +260,13 @@ If the bot is a manager or above, move the specified user in the waitlist. Pass 
 
 If the bot is a manager, lock/unlock the waitlist.
 
+### woot: ()
+
+Makes the bot woot the currently playing track. NOTE:There is no way to woot via the official Plug API, so this is and `meh` are sort of a hack - they appear to sporadically stop working.
+
+### meh: ()
+
+MAkes the bot meh the currently playing track. Same note as woot applies.
 
 
 ## Running multiple bots
