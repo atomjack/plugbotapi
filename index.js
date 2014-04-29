@@ -104,7 +104,10 @@
                   var events = ['CHAT', 'USER_SKIP', 'USER_JOIN', 'USER_LEAVE', 'USER_FAN', 'FRIEND_JOIN', 'FAN_JOIN', 'VOTE_UPDATE', 'CURATE_UPDATE', 'ROOM_SCORE_UPDATE', 'DJ_ADVANCE', 'DJ_UPDATE', 'WAIT_LIST_UPDATE', 'VOTE_SKIP', 'MOD_SKIP', 'CHAT_COMMAND', 'HISTORY_UPDATE'];
                   for (var i in events) {
                     var thisEvent = events[i];
-                    var line = 'API.on(API.' + thisEvent + ', function(data) { console.log(\'API.' + thisEvent + ':\' + JSON.stringify(data)); }); ';
+                    // First, let's turn off any listeners to the PlugAPI, in case we get disconnected and reconnected - we don't want these events to be duplicated.
+                    var line = 'API.off(API.' + thisEvent + ');';
+                    eval(line);
+                    line = 'API.on(API.' + thisEvent + ', function(data) { console.log(\'API.' + thisEvent + ':\' + JSON.stringify(data)); }); ';
                     eval(line);
                   }
                   return {
