@@ -126,12 +126,12 @@
                 });
               } else if(msg.match(/^API/)) {
                 _this.debug.logapi(msg);
+              } else if (msg.match(/^(sio disconnect|sio connect failed|sio an unknown error occurred|sessionClose received)/)) {
+                _this.emit('connectionError', msg);
               } else {
                 _this.debug.logother(msg);
               }
-              if (msg.match(/^error/) && _this.pageReady === false) {
-                _this.emit('connectionError', msg);
-              }
+
 
 
               var apiRegexp = /^API.([^:]+):(.*)/g;
