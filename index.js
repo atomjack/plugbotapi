@@ -309,16 +309,16 @@
       this.apiCall('moderateRemoveDJ', userid, callback);
     };
     
-    PlugBotAPI.prototype.moderateBanUser = function(userid, duration, callback) {
-        var userid = arguments[0];
-        var duration = this.API.BAN.PERMA;
-        var callback;
-        if(typeof arguments[1] == 'function')
-            callback = arguments[1];
-        else {
-            duration = arguments[1];
-            callback = arguments[2];
-        }
+    PlugBotAPI.prototype.moderateBanUser = function() {
+      var userid = arguments[0];
+      var duration = this.API.BAN.PERMA;
+      var callback;
+      if(typeof arguments[1] == 'function')
+          callback = arguments[1];
+      else {
+          duration = arguments[1];
+          callback = arguments[2];
+      }
       this.apiCall('moderateBanUser', [userid, 'a', duration], callback);
     };
     
