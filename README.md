@@ -60,7 +60,7 @@ PlugBotAPI.getAuth({
 ```
 
 ### Events
-PlugBotAPI emits the following events. For documentation please refer to the official [http://support.plug.dj/hc/en-us/articles/201687377-Documentation#chat](Plug.dj API).
+PlugBotAPI emits the following events. For documentation please refer to the official [Plug.dj API](http://support.plug.dj/hc/en-us/articles/201687377-Documentation#chat).
 
 * chat
 * userSkip
