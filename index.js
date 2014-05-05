@@ -343,6 +343,7 @@
           result: false,
           error: 'Invalid position'
         });
+        return false;
       }
       this.apiCall('moderateMoveDJ', [userid, parseInt(position)], callback);
     };
