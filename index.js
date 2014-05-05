@@ -338,7 +338,13 @@
     };
     
     PlugBotAPI.prototype.moderateMoveDJ = function(userid, position, callback) {
-      this.apiCall('moderateMoveDJ', [userid, position], callback);
+      if(parseInt(position) == NaN) {
+        callback({
+          result: false,
+          error: 'Invalid position'
+        });
+      }
+      this.apiCall('moderateMoveDJ', [userid, parseInt(position)], callback);
     };
     
     PlugBotAPI.prototype.moderateLockWaitList = function(locked, removeAll, callback) {
