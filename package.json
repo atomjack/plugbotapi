@@ -1,7 +1,7 @@
 {
   "name": "plugbotapi",
   "description": "An API for creating bots on plug.dj",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "keywords": ["plug.dj", "plug"],
   "repository": {
     "type": "git",
