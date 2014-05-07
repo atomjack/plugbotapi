@@ -83,7 +83,7 @@ PlugBotAPI emits the following events. For documentation please refer to the off
 Also emitted is the following:
 
 * roomJoin: emitted when the bot has completed joining the room and is ready to send actions/receive events.
-
+* invalidLogin: emitted when the bot is unable to login, possibly due to an invalid auth cookie.
 
 ## Actions
 

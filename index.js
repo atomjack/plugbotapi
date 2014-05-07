@@ -86,6 +86,14 @@
 
           page.open('http://plug.dj/' + room, function(status) {
 
+            // Check for invalid login
+            page.evaluate(function() {
+              return $('#oauth_form').length == 0;
+            }, function(loggedin) {
+              if(!loggedin)
+                _this.emit('invalidLogin');
+            });
+
             page.set('onConsoleMessage', function(msg) {
 
               // this will appear once we're ready
