@@ -324,11 +324,14 @@
       var userid = arguments[0];
       var duration = this.API.BAN.PERMA;
       var callback;
-      if(typeof arguments[1] == 'function')
-          callback = arguments[1];
-      else {
-          duration = arguments[1];
-          callback = arguments[2];
+
+      for(var i=1;i<arguments.length;i++) {
+        if(typeof arguments[i] == 'function')
+          callback = arguments[i];
+        else if(typeof arguments[i] == 'number')
+          duration = arguments[i];
+        else if(typeof arguments[i] == 'string')
+          reason = arguments[i];
       }
       this.apiCall('moderateBanUser', [userid, 'a', duration], callback);
     };

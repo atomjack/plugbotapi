@@ -1,7 +1,9 @@
 plugbotapi
 =======
 
-An API for creating bots on plug.dj
+An API for creating bots on plug.dj.
+
+This API uses the official Plug API, so it should be much more stable than the old plugapi.
 
 
 ## Installation
@@ -211,9 +213,13 @@ Adds a user to the dj booth or wait list by passing that user's id. Users who do
 
 Removes a DJ from the booth or wait list by passing that user's id.
 
-### moderateBanUser: (userid, [duration], [callback])
+### moderateBanUser: (userid, [reason], [duration], [callback])
 
-Bans a user from the room. If the bot is only a bouncer, permanent bans are not available. Specify the duration with one of the following constants:
+Bans a user from the room.
+
+Reason is a string describing why the user is banned (but not really needed).
+
+If the bot is only a bouncer, permanent bans are not available. Specify the duration with one of the following constants:
 
 * API.BAN.HOUR
 * API.BAN.DAY
@@ -224,7 +230,7 @@ If you do not specify a duration, a permanent ban will be the default unless the
 Example:
 
 ```
-plugbotapi.moderateBanUser('xxxxx', plugbotapi.API.BAN.DAY, function() {
+plugbotapi.moderateBanUser('xxxxx', 'some reason', plugbotapi.API.BAN.DAY, function() {
 // Done
 });
 ```
