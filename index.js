@@ -126,7 +126,7 @@
 
                 var events = ['CHAT', 'USER_SKIP', 'USER_JOIN', 'USER_LEAVE', 'VOTE_UPDATE',
                   'GRAB_UPDATE', 'SCORE_UPDATE',
-                  'DJ_ADVANCE', 'WAIT_LIST_UPDATE', 'MOD_SKIP',
+                  'ADVANCE', 'WAIT_LIST_UPDATE', 'MOD_SKIP',
                   'CHAT_COMMAND', 'HISTORY_UPDATE'];
                 for (var i in events) {
                   var thisEvent = events[i];
