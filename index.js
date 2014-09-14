@@ -11,8 +11,8 @@
   
     __extends(PlugBotAPI, _super);
   
-    function PlugBotAPI(auth) {
-      this.auth = auth;
+    function PlugBotAPI(remember_token) {
+      this.remember_token = remember_token;
       this.page = false;
       this.pageReady = false;
       this.ph = false;
@@ -96,7 +96,7 @@
     PlugBotAPI.prototype.openPage = function(room) {
       var _this = this;
       this.ph.createPage(function(page) {
-        _this.ph.addCookie('usr', _this.auth, 'plug.dj');
+        _this.ph.addCookie('remember_token', _this.remember_token, 'plug.dj');
 
         page.open('http://plug.dj/' + room, function(status) {
 
@@ -108,76 +108,90 @@
               _this.emit('invalidLogin');
           });
 
+          var tries = 0;
+          var loadInterval = setInterval(function() {
+            page.evaluate(function() {
+              return $('.app-header').length > 0;
+            }, function(found) {
+              tries++;
+              if(found) {
+                _this.pageReady = true;
 
-          page.set('onConsoleMessage', function(msg) {
-
-            // this will appear once we're ready
-            if (msg.match(/^sio join/)) {
-              _this.debug.logother(msg);
-              _this.pageReady = true;
-
-              // Setup events
-              page.evaluate(function() {
-                // First, get rid of the playback div so we don't needlessly use up all that bandwidth
-                $('#playback').remove();
-                // Might as well get rid of these, perhaps lower cpu usage?
-                $('#audience').remove();
-                $('#dj-booth').remove();
-
-                var events = ['CHAT', 'USER_SKIP', 'USER_JOIN', 'USER_LEAVE', 'VOTE_UPDATE',
-                  'GRAB_UPDATE', 'SCORE_UPDATE',
-                  'ADVANCE', 'WAIT_LIST_UPDATE', 'MOD_SKIP',
-                  'CHAT_COMMAND', 'HISTORY_UPDATE'];
-                for (var i in events) {
-                  var thisEvent = events[i];
-                  // First, let's turn off any listeners to the PlugAPI, in case we get disconnected and reconnected - we don't want these events to be duplicated.
-                  var line = 'API.off(API.' + thisEvent + ');';
-                  eval(line);
-                  line = 'API.on(API.' + thisEvent + ', function(data) { data.fromID = data.fid; data.chatID = data.cid; console.log(\'API.' + thisEvent + ':\' + JSON.stringify(data)); }); ';
-                  eval(line);
-                }
-                return {
-                  ROLE: API.ROLE,
-                  STATUS: API.STATUS,
-                  BAN: API.BAN
-                };
-              }, function (result) {
-                _this.API.ROLE = result.ROLE;
-                _this.API.STATUS = result.STATUS;
-                _this.API.BAN = result.BAN;
-                setTimeout(function () {
-                  _this.emit('roomJoin');
-                }, 1000);
-
-              });
-            } else if(msg.match(/^API/)) {
-              _this.debug.logapi(msg);
-            } else {
-              _this.debug.logother(msg);
-            }
-            if (msg.match(/^error/) && _this.pageReady === false) {
-              _this.emit('connectionError', msg);
-            }
+                page.set('onConsoleMessage', function(msg) {
+                  if(msg.match(/^API/)) {
+                    _this.debug.logapi(msg);
+                  } else {
+                    _this.debug.logother(msg);
+                  }
+                  if (msg.match(/^error/) && _this.pageReady === false) {
+                    _this.emit('connectionError', msg);
+                  }
 
 
-            var apiRegexp = /^API.([^:]+):(.*)/g;
-            var matches = apiRegexp.exec(msg);
+                  var apiRegexp = /^API.([^:]+):(.*)/g;
+                  var matches = apiRegexp.exec(msg);
+                  if (matches != null) {
+                    //console.log(matches[1] + ":" + matches[2]);
+                    // matches[1] = which event
+                    // matches[2] = json representation of data
 
-            if (matches != null) {
-              //console.log(matches[1] + ":" + matches[2]);
-              // matches[1] = which event
-              // matches[2] = json representation of data
+                    // Rename event to be camelCase
+                    var event = matches[1].toLowerCase().replace(/_([a-z])/g, function(a) {
+                      return a.replace('_', '').toUpperCase();
+                    });
+                    var data = JSON.parse(matches[2]);
+                    // emit this event out to the PlugBotAPI, for a bot to receive
+                    _this.emit(event, data);
+                  }
+                });
 
-              // Rename event to be camelCase
-              var event = matches[1].toLowerCase().replace(/_([a-z])/g, function(a) {
-                return a.replace('_', '').toUpperCase();
-              });
-              var data = JSON.parse(matches[2]);
+                // Setup events
+                page.evaluate(function() {
+                  // TODO: Verify these
 
-              // emit this event out to the PlugBotAPI, for a bot to receive
-              _this.emit(event, data);
-            }
-          });
+                  // First, get rid of the playback div so we don't needlessly use up all that bandwidth
+                  $('#playback').remove();
+                  // Might as well get rid of these, perhaps lower cpu usage?
+                  $('#audience').remove();
+                  $('#dj-booth').remove();
+
+                  var events = ['ADVANCE', 'CHAT', 'GRAB_UPDATE', 'HISTORY_UPDATE', 'MOD_SKIP',
+                    'SCORE_UPDATE', 'USER_JOIN', 'USER_LEAVE', 'USER_SKIP', 'VOTE_UPDATE', 'WAIT_LIST_UPDATE'];
+                  var foo = [];
+                  for (var i in events) {
+                    var thisEvent = events[i];
+                    // First, let's turn off any listeners to the PlugAPI, in case we get disconnected and reconnected - we don't want these events to be duplicated.
+                    var line = 'API.off(API.' + thisEvent + ');';
+                    eval(line);
+                    line = 'API.on(API.' + thisEvent + ', function(data) { data.fromID = data.fid; data.chatID = data.cid; console.log(\'API.' + thisEvent + ':\' + JSON.stringify(data)); }); ';
+                    eval(line);
+                    foo.push(line);
+                  }
+                  return {
+                    ROLE: API.ROLE,
+                    STATUS: API.STATUS,
+                    BAN: API.BAN,
+                    foo: foo
+                  };
+                }, function (result) {
+                  _this.API.ROLE = result.ROLE;
+                  _this.API.STATUS = result.STATUS;
+                  _this.API.BAN = result.BAN;
+                  setTimeout(function () {
+                    _this.emit('roomJoin');
+                  }, 1000);
+
+                });
+
+
+
+                clearInterval(loadInterval);
+              } else if(tries > 15) {
+                clearInterval(loadInterval);
+                console.log("Sorry, I couldn't seem to connect.");
+              }
+            });
+          }, 2000);
         });
 
         _this.page = page;
