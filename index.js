@@ -16,7 +16,7 @@
       this.page = false;
       this.pageReady = false;
       this.loggedin = false;
-      this.cookies = [];
+      this.cookies = {};
       this.ph = false;
       this.phantomPort = 12300; // default phantom port
       this.API = {}; // Plug constants
@@ -218,7 +218,7 @@
           _this.connect(room);
         });
       } else {
-        if(this.loggedin === false && this.cookies.length == 0) {
+        if(this.loggedin === false && this.cookies.amplitude_id == undefined) {
           this.login(this.creds, function () {
             _this.openPage(room);
           });
@@ -263,7 +263,7 @@
                       return document.cookie;
                     }, function(cookie) {
                       var els = cookie.split('; ');
-                      _this.cookies = [];
+                      _this.cookies = {};
                       for(var i=0;i<els.length;i++) {
                         var cookie = els[i].split("=");
                         _this.cookies[cookie[0]] = cookie[1];
