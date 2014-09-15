@@ -81,7 +81,7 @@
 
     PlugBotAPI.prototype.createPage = function(room, callback) {
       var _this = this;
-      phantom.create({ port: _this.phantomPort }, function(ph) {
+      phantom.create("--ssl-protocol=TLSv1", { port: _this.phantomPort }, function(ph) {
         ph.get('version', function(result) {
           if(result.major < 2) {
             var version = result.major + "." + result.minor + "." + result.patch;
@@ -116,9 +116,9 @@
         page.open('http://plug.dj/' + room, function(status) {
           // Check for invalid login
           page.evaluate(function() {
-            return $('.existing button').length;
+            return $('.existing button').length > 0;
           }, function(loginbutton) {
-            if(loginbutton != null) {
+            if(loginbutton) {
               _this.emit('invalidLogin');
               if(_this.autoRetryLogin === true && _this.creds.email != undefined && _this.creds.password != undefined) {
                 _this.login(_this.creds, function () {
