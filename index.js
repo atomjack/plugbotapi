@@ -218,7 +218,7 @@
           _this.connect(room);
         });
       } else {
-        if(this.loggedin === false) {
+        if(this.loggedin === false && this.cookies.length == 0) {
           this.login(this.creds, function () {
             _this.openPage(room);
           });
