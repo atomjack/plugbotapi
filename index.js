@@ -18,6 +18,7 @@
       this.loggedin = false;
       this.cookies = {};
       this.ph = false;
+      this.autoRetryLogin = true;
       this.phantomPort = 12300; // default phantom port
       this.API = {}; // Plug constants
       this.debug.plugbotapi = this;
@@ -113,96 +114,102 @@
         }
 
         page.open('http://plug.dj/' + room, function(status) {
-
           // Check for invalid login
           page.evaluate(function() {
-            return $('#oauth_form').length == 0;
-          }, function(loggedin) {
-            if(!loggedin)
+            return $('.existing button').length;
+          }, function(loginbutton) {
+            if(loginbutton != null) {
               _this.emit('invalidLogin');
+              if(_this.autoRetryLogin === true && _this.creds.email != undefined && _this.creds.password != undefined) {
+                _this.login(_this.creds, function () {
+                  _this.openPage(room);
+                });
+              }
+            } else {
+              var tries = 0;
+              var loadInterval = setInterval(function() {
+                page.evaluate(function() {
+                  return $('.app-header').length > 0;
+                }, function(found) {
+                  tries++;
+                  if(found) {
+                    console.log("Joined " + room);
+                    _this.pageReady = true;
+
+                    page.set('onConsoleMessage', function(msg) {
+                      if(msg.match(/^API/)) {
+                        _this.debug.logapi(msg);
+                      } else {
+                        _this.debug.logother(msg);
+                      }
+                      if (msg.match(/^error/) && _this.pageReady === false) {
+                        _this.emit('connectionError', msg);
+                      }
+
+
+                      var apiRegexp = /^API.([^:]+):(.*)/g;
+                      var matches = apiRegexp.exec(msg);
+                      if (matches != null) {
+                        //console.log(matches[1] + ":" + matches[2]);
+                        // matches[1] = which event
+                        // matches[2] = json representation of data
+
+                        // Rename event to be camelCase
+                        var event = matches[1].toLowerCase().replace(/_([a-z])/g, function(a) {
+                          return a.replace('_', '').toUpperCase();
+                        });
+                        var data = JSON.parse(matches[2]);
+                        // emit this event out to the PlugBotAPI, for a bot to receive
+                        _this.emit(event, data);
+                      }
+                    });
+
+                    // Setup events
+                    page.evaluate(function() {
+                      // First, get rid of the playback div so we don't needlessly use up all that bandwidth
+                      $('#playback').remove();
+                      // Might as well get rid of these, perhaps lower cpu usage?
+                      $('#audience').remove();
+                      $('#dj-booth').remove();
+
+                      var events = ['ADVANCE', 'CHAT', 'GRAB_UPDATE', 'HISTORY_UPDATE', 'MOD_SKIP',
+                        'SCORE_UPDATE', 'USER_JOIN', 'USER_LEAVE', 'USER_SKIP', 'VOTE_UPDATE', 'WAIT_LIST_UPDATE'];
+                      for (var i in events) {
+                        var thisEvent = events[i];
+                        // First, let's turn off any listeners to the Plug API, in case we get disconnected and reconnected - we don't want these events to be duplicated.
+                        var line = 'API.off(API.' + thisEvent + ');';
+                        eval(line);
+                        line = 'API.on(API.' + thisEvent + ', function(data) { data.fromID = data.uid; data.chatID = data.cid; console.log(\'API.' + thisEvent + ':\' + JSON.stringify(data)); }); ';
+                        eval(line);
+                      }
+                      return {
+                        ROLE: API.ROLE,
+                        STATUS: API.STATUS,
+                        BAN: API.BAN
+                      };
+                    }, function (result) {
+                      _this.API.ROLE = result.ROLE;
+                      _this.API.STATUS = result.STATUS;
+                      _this.API.BAN = result.BAN;
+                      setTimeout(function () {
+                        _this.emit('roomJoin');
+                      }, 1000);
+
+                    });
+
+
+
+                    clearInterval(loadInterval);
+                  } else if(tries > 15) {
+                    clearInterval(loadInterval);
+                    console.log("Sorry, I couldn't seem to connect.");
+                  }
+                });
+              }, 2000);
+            }
           });
 
-          var tries = 0;
-          var loadInterval = setInterval(function() {
-            page.evaluate(function() {
-              return $('.app-header').length > 0;
-            }, function(found) {
-              tries++;
-              if(found) {
-                console.log("Joined " + room);
-                _this.pageReady = true;
 
-                page.set('onConsoleMessage', function(msg) {
-//                  console.log("console: ", msg);
-                  if(msg.match(/^API/)) {
-                    _this.debug.logapi(msg);
-                  } else {
-                    _this.debug.logother(msg);
-                  }
-                  if (msg.match(/^error/) && _this.pageReady === false) {
-                    _this.emit('connectionError', msg);
-                  }
-
-
-                  var apiRegexp = /^API.([^:]+):(.*)/g;
-                  var matches = apiRegexp.exec(msg);
-                  if (matches != null) {
-                    //console.log(matches[1] + ":" + matches[2]);
-                    // matches[1] = which event
-                    // matches[2] = json representation of data
-
-                    // Rename event to be camelCase
-                    var event = matches[1].toLowerCase().replace(/_([a-z])/g, function(a) {
-                      return a.replace('_', '').toUpperCase();
-                    });
-                    var data = JSON.parse(matches[2]);
-                    // emit this event out to the PlugBotAPI, for a bot to receive
-                    _this.emit(event, data);
-                  }
-                });
-
-                // Setup events
-                page.evaluate(function() {
-                  // First, get rid of the playback div so we don't needlessly use up all that bandwidth
-                  $('#playback').remove();
-                  // Might as well get rid of these, perhaps lower cpu usage?
-                  $('#audience').remove();
-                  $('#dj-booth').remove();
-
-                  var events = ['ADVANCE', 'CHAT', 'GRAB_UPDATE', 'HISTORY_UPDATE', 'MOD_SKIP',
-                    'SCORE_UPDATE', 'USER_JOIN', 'USER_LEAVE', 'USER_SKIP', 'VOTE_UPDATE', 'WAIT_LIST_UPDATE'];
-                  for (var i in events) {
-                    var thisEvent = events[i];
-                    // First, let's turn off any listeners to the Plug API, in case we get disconnected and reconnected - we don't want these events to be duplicated.
-                    var line = 'API.off(API.' + thisEvent + ');';
-                    eval(line);
-                    line = 'API.on(API.' + thisEvent + ', function(data) { data.fromID = data.uid; data.chatID = data.cid; console.log(\'API.' + thisEvent + ':\' + JSON.stringify(data)); }); ';
-                    eval(line);
-                  }
-                  return {
-                    ROLE: API.ROLE,
-                    STATUS: API.STATUS,
-                    BAN: API.BAN
-                  };
-                }, function (result) {
-                  _this.API.ROLE = result.ROLE;
-                  _this.API.STATUS = result.STATUS;
-                  _this.API.BAN = result.BAN;
-                  setTimeout(function () {
-                    _this.emit('roomJoin');
-                  }, 1000);
-
-                });
-
-
-
-                clearInterval(loadInterval);
-              } else if(tries > 15) {
-                clearInterval(loadInterval);
-                console.log("Sorry, I couldn't seem to connect.");
-              }
-            });
-          }, 2000);
         });
 
         _this.page = page;
