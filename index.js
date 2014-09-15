@@ -11,10 +11,12 @@
   
     __extends(PlugBotAPI, _super);
   
-    function PlugBotAPI(remember_token) {
-      this.remember_token = remember_token;
+    function PlugBotAPI(creds) {
+      this.creds = creds;
       this.page = false;
       this.pageReady = false;
+      this.loggedin = false;
+      this.cookies = [];
       this.ph = false;
       this.phantomPort = 12300; // default phantom port
       this.API = {}; // Plug constants
@@ -96,7 +98,19 @@
     PlugBotAPI.prototype.openPage = function(room) {
       var _this = this;
       this.ph.createPage(function(page) {
-        _this.ph.addCookie('remember_token', _this.remember_token, 'plug.dj');
+        for(var key in _this.cookies) {
+          var domain = key.match(/^ajs/) ? '.plug.dj' : 'plug.dj';
+          var cookie = {
+            name: key,
+            value: _this.cookies[key],
+            domain: domain,
+            path: '/',
+            httponly: true,
+            secure: false,
+            expires: (new Date().getTime() + (1000*60*60*24*7))
+          };
+          _this.ph.addCookie(cookie);
+        }
 
         page.open('http://plug.dj/' + room, function(status) {
 
@@ -115,9 +129,11 @@
             }, function(found) {
               tries++;
               if(found) {
+                console.log("Joined " + room);
                 _this.pageReady = true;
 
                 page.set('onConsoleMessage', function(msg) {
+//                  console.log("console: ", msg);
                   if(msg.match(/^API/)) {
                     _this.debug.logapi(msg);
                   } else {
@@ -147,8 +163,6 @@
 
                 // Setup events
                 page.evaluate(function() {
-                  // TODO: Verify these
-
                   // First, get rid of the playback div so we don't needlessly use up all that bandwidth
                   $('#playback').remove();
                   // Might as well get rid of these, perhaps lower cpu usage?
@@ -157,21 +171,18 @@
 
                   var events = ['ADVANCE', 'CHAT', 'GRAB_UPDATE', 'HISTORY_UPDATE', 'MOD_SKIP',
                     'SCORE_UPDATE', 'USER_JOIN', 'USER_LEAVE', 'USER_SKIP', 'VOTE_UPDATE', 'WAIT_LIST_UPDATE'];
-                  var foo = [];
                   for (var i in events) {
                     var thisEvent = events[i];
-                    // First, let's turn off any listeners to the PlugAPI, in case we get disconnected and reconnected - we don't want these events to be duplicated.
+                    // First, let's turn off any listeners to the Plug API, in case we get disconnected and reconnected - we don't want these events to be duplicated.
                     var line = 'API.off(API.' + thisEvent + ');';
                     eval(line);
-                    line = 'API.on(API.' + thisEvent + ', function(data) { data.fromID = data.fid; data.chatID = data.cid; console.log(\'API.' + thisEvent + ':\' + JSON.stringify(data)); }); ';
+                    line = 'API.on(API.' + thisEvent + ', function(data) { data.fromID = data.uid; data.chatID = data.cid; console.log(\'API.' + thisEvent + ':\' + JSON.stringify(data)); }); ';
                     eval(line);
-                    foo.push(line);
                   }
                   return {
                     ROLE: API.ROLE,
                     STATUS: API.STATUS,
-                    BAN: API.BAN,
-                    foo: foo
+                    BAN: API.BAN
                   };
                 }, function (result) {
                   _this.API.ROLE = result.ROLE;
@@ -200,31 +211,78 @@
 
     PlugBotAPI.prototype.connect = function(room) {
       var _this = this;
-      if(this.page === false) {
+      if(this.ph === false) {
         // Need to create page
         this.createPage(room, function(ph) {
           _this.ph = ph;
-          _this.openPage(room);
+          _this.connect(room);
         });
       } else {
-        this.openPage(room);
-      }
-    };
-    
-    PlugBotAPI.getAuth = function(creds, callback) {
-      var plugLogin = require('plug-dj-login');
-      plugLogin(creds, function(err, cookie) {
-        if(err) {
-          if(typeof callback == 'function')
-            callback(err, null);
-          return;
+        if(this.loggedin === false) {
+          this.login(this.creds, function () {
+            _this.openPage(room);
+          });
+        } else {
+          this.openPage(room);
         }
 
-        var cookieVal = cookie.value;
-        cookieVal = cookieVal.replace(/^\"/, "").replace(/\"$/, "");
-        if(typeof callback == 'function') {
-          callback(err, cookieVal);
-        }
+      }
+    };
+
+    PlugBotAPI.prototype.login = function(creds, callback) {
+      console.log("Logging in.");
+      var _this = this;
+      _this.ph.createPage(function(page) {
+        _this.ph.addCookie('usr', _this.auth, 'plug.dj');
+
+        page.set('onError', function(msg, trace) {
+          console.log("Error: " + msg + ": ", trace);
+        });
+
+        page.open('http://plug.dj/', function(status) {
+          setTimeout(function() {
+            page.evaluate(function() {
+//              console.log("finding login button");
+              if($('.existing').length > 0) {
+//                console.log("clicking ", $('.existing button'));
+                $('.existing button').click();
+                return true;
+              } else
+                return false;
+            }, function(foundLoginButton) {
+              if(foundLoginButton) {
+                page.evaluate(function(creds) {
+                  $('#email').val(creds.email);
+                  $('#password').val(creds.password);
+                  $('#submit').click();
+                  return true;
+                }, function(result) {
+                  _this.loggedin = true;
+                  setTimeout(function() {
+                    page.evaluate(function() {
+                      return document.cookie;
+                    }, function(cookie) {
+                      var els = cookie.split('; ');
+                      _this.cookies = [];
+                      for(var i=0;i<els.length;i++) {
+                        var cookie = els[i].split("=");
+                        _this.cookies[cookie[0]] = cookie[1];
+                      }
+                      // Need to close the page before we finish, otherwise loading the room will get invalidated shortly after it loads, as this page is still active
+                      page.close();
+                      if(typeof callback == 'function') {
+                        callback();
+                      }
+                    });
+
+                  }, 3000);
+                }, creds);
+              } else {
+                console.log("Couldn't find login button.");
+              }
+            });
+          }, 4000);
+        });
       });
     };
     
