@@ -133,7 +133,6 @@
                 }, function(found) {
                   tries++;
                   if(found) {
-                    console.log("Joined " + room);
                     _this.pageReady = true;
 
                     page.set('onConsoleMessage', function(msg) {
@@ -375,9 +374,13 @@
     PlugBotAPI.prototype.getMedia = function(callback) {
       this.apiCall('getMedia', null, callback);
     };
-    
+
     PlugBotAPI.prototype.getRoomScore = function(callback) {
-      this.apiCall('getRoomScore', null, callback);
+      this.apiCall('getScore', null, callback);
+    };
+
+    PlugBotAPI.prototype.getScore = function(callback) {
+      this.apiCall('getScore', null, callback);
     };
     
     PlugBotAPI.prototype.getHistory = function(callback) {
