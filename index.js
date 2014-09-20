@@ -184,12 +184,14 @@
                       return {
                         ROLE: API.ROLE,
                         STATUS: API.STATUS,
-                        BAN: API.BAN
+                        BAN: API.BAN,
+                        MUTE: API.MUTE
                       };
                     }, function (result) {
                       _this.API.ROLE = result.ROLE;
                       _this.API.STATUS = result.STATUS;
                       _this.API.BAN = result.BAN;
+                      _this.API.MUTE = result.MUTE;
                       setTimeout(function () {
                         _this.emit('roomJoin');
                       }, 1000);
@@ -455,11 +457,19 @@
     PlugBotAPI.prototype.moderateDeleteChat = function(chatid, callback) {
       this.apiCall('moderateDeleteChat', chatid, callback);
     };
-    
+
     PlugBotAPI.prototype.moderateSetRole = function(userid, permission, callback) {
       this.apiCall('moderateSetRole', [userid, permission], callback);
     };
-    
+
+    PlugBotAPI.prototype.moderateMuteUser = function(userid, duration, reason, callback) {
+      this.apiCall('moderateMuteUser', [userid, duration, reason], callback);
+    };
+
+    PlugBotAPI.prototype.moderateUnmuteUser = function(userid, callback) {
+      this.apiCall('moderateUnmuteUser', [userid], callback);
+    };
+
     PlugBotAPI.prototype.moderateMoveDJ = function(userid, position, callback) {
       if(parseInt(position) == NaN) {
         callback({
