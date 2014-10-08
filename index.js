@@ -438,16 +438,17 @@
       var userid = arguments[0];
       var duration = this.API.BAN.PERMA;
       var callback;
+      var reason = 4;
 
       for(var i=1;i<arguments.length;i++) {
         if(typeof arguments[i] == 'function')
           callback = arguments[i];
         else if(typeof arguments[i] == 'number')
-          duration = arguments[i];
-        else if(typeof arguments[i] == 'string')
           reason = arguments[i];
+        else if(typeof arguments[i] == 'string')
+          duration = arguments[i];
       }
-      this.apiCall('moderateBanUser', [userid, 'a', duration], callback);
+      this.apiCall('moderateBanUser', [userid, reason, duration], callback);
     };
     
     PlugBotAPI.prototype.moderateUnbanUser = function(userid, callback) {
