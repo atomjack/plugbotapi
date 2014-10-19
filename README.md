@@ -27,15 +27,15 @@ var plugbotapi = new PlugBotAPI({
 
 
 plugbotapi.on('roomJoin', function() {
-console.log("Connected!");
+    console.log("Connected!");
 
-plugbotapi.chat('Hello World');
+    plugbotapi.chat('Hello World');
 
-plugbotapi.getUsers(function(users) {
-  console.log("Number of users in the room: " + users.length);
-});
+    plugbotapi.getUsers(function(users) {
+      console.log("Number of users in the room: " + users.length);
+    });
 
-plugbotapi.hasPermission('2492d8ab9fef78dad5620a300', 'API.ROLE.NONE', function(result) {
+    plugbotapi.hasPermission('2492d8ab9fef78dad5620a300', 'API.ROLE.NONE', function(result) {
       console.log("permission: ", result);
     });
 });
