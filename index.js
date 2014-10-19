@@ -204,6 +204,7 @@
                   } else if(tries > 15) {
                     clearInterval(loadInterval);
                     console.log("Sorry, I couldn't seem to connect.");
+                    _this.emit('unableToConnect');
                   }
                 });
               }, 2000);
@@ -389,7 +390,6 @@
       this.apiCall('getHistory', null, callback);
     };
     
-    // TODO:make sure this works
     PlugBotAPI.prototype.hasPermission = function(userid, role, callback) {
       this.apiCall('hasPermission', [userid, role], callback);
     };

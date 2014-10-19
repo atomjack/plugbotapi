@@ -19,73 +19,64 @@ npm install plugbotapi
 
 ```
 var PlugBotAPI = require('plugbotapi');
- 
-PlugBotAPI.getAuth({
-  username: 'xxxx', // twitter username
-  password: 'xxxx' // twitter password
-}, function(err, auth) {
- 
-  var plugbotapi = new PlugBotAPI(auth);
-  var room = 'some-room';
 
- 
- 
-  plugbotapi.connect(room);
-   
-  plugbotapi.on('roomJoin', function() {
-    console.log("Connected!");
+var plugbotapi = new PlugBotAPI({
+    email: 'user@domain.com',
+    password: 'xxxxx'
+});
 
-    plugbotapi.chat('Hello World');
-    
-    plugbotapi.getUsers(function(users) {
-      console.log("Number of users in the room: " + users.length);
-    });
-    
-    plugbotapi.hasPermission('52a648c496fba57878e8f809', 'API.ROLE.NONE', function(result) {
+
+plugbotapi.on('roomJoin', function() {
+console.log("Connected!");
+
+plugbotapi.chat('Hello World');
+
+plugbotapi.getUsers(function(users) {
+  console.log("Number of users in the room: " + users.length);
+});
+
+plugbotapi.hasPermission('2492d8ab9fef78dad5620a300', 'API.ROLE.NONE', function(result) {
       console.log("permission: ", result);
     });
-  });
-   
-  // A few sample events
-  plugbotapi.on('chat', function(data) {
-    console.log("got chat: ", data);
-  });
-   
-  plugbotapi.on('djAdvance', function(data) {
-    console.log("dj advance: ", data);
-  });
-   
-  plugbotapi.on('voteUpdate', function(data) {
-    console.log("vote update: ", data);
-  });
 });
+
+// A few sample events
+plugbotapi.on('chat', function(data) {
+console.log("got chat: ", data);
+});
+
+plugbotapi.on('djAdvance', function(data) {
+    console.log("dj advance: ", data);
+});
+
+plugbotapi.on('voteUpdate', function(data) {
+console.log("vote update: ", data);
+});
+
+var room = 'some-room';
+plugbotapi.connect(room);
 ```
 
 ### Events
 PlugBotAPI emits the following events. For documentation please refer to the official [Plug.dj API](http://support.plug.dj/hc/en-us/articles/201687377-Documentation#chat).
 
+* advance
 * chat
-* userSkip
+* grabUpdate
+* historyUpdate
+* modSkip
+* scoreUpdate
 * userJoin
 * userLeave
-* userFan
-* friendJoin
-* fanJoin
+* userSkip
 * voteUpdate
-* curateUpdate
-* roomScoreUpdate
-* djAdvance
-* djUpdate
 * waitListUpdate
-* voteSkip
-* modSkip
-* chatCommand
-* historyUpdate
 
 Also emitted is the following:
 
 * roomJoin: emitted when the bot has completed joining the room and is ready to send actions/receive events.
 * invalidLogin: emitted when the bot is unable to login, possibly due to an invalid auth cookie.
+* unableToConnect: emitted after the bot tries 15 times to connect but is unable to
 
 ## Actions
 
@@ -140,6 +131,10 @@ Returns the user object of the room host if they are currently in the room, unde
 Returns the media object of the current playing media.
 
 ### getRoomScore: (callback)
+
+Returns a room score object with the properties positive, negative, curates, and score.
+
+### getScore: (callback)
 
 Returns a room score object with the properties positive, negative, curates, and score.
 
@@ -217,7 +212,7 @@ Removes a DJ from the booth or wait list by passing that user's id.
 
 Bans a user from the room.
 
-Reason is a string describing why the user is banned (but not really needed).
+Reason is an integer describing why the user is banned (but not really needed; defaults to 4).
 
 If the bot is only a bouncer, permanent bans are not available. Specify the duration with one of the following constants:
 
@@ -230,7 +225,7 @@ If you do not specify a duration, a permanent ban will be the default unless the
 Example:
 
 ```
-plugbotapi.moderateBanUser('xxxxx', 'some reason', plugbotapi.API.BAN.DAY, function() {
+plugbotapi.moderateBanUser('xxxxx', plugbotapi.API.BAN.DAY, function() {
 // Done
 });
 ```
